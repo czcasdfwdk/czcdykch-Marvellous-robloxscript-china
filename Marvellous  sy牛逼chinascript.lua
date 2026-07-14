@@ -1,4 +1,3 @@
-
 -- ============================================================
 --  可拖动窗口 - DyK杀戮/吸人 (双模式)
 --  模式1: 杀戮模式 - 循环执行 (速度可调)
@@ -24,7 +23,7 @@ local CONFIG = {
     AttackSpeed = 0.3,
     SelectedPlayers = {},
     IsAllMode = true,
-    CurrentMode = 1,                  -- 1=杀戮, 2=吸人
+    CurrentMode = 1,
 }
 
 -- ============================================================
@@ -35,7 +34,7 @@ screenGui.Name = "DyKGUI"
 screenGui.Parent = player:WaitForChild("PlayerGui")
 screenGui.ResetOnSpawn = false
 
--- 主窗口 (高度310，Y=0.50)
+-- 主窗口
 local mainWindow = Instance.new("Frame")
 mainWindow.Name = "MainWindow"
 mainWindow.Size = UDim2.new(0, 200, 0, 310)
@@ -57,14 +56,16 @@ windowStroke.Thickness = 1
 windowStroke.Parent = mainWindow
 
 -- ============================================================
---  标题栏
+--  标题栏 (可拖动区域 - 使用TextButton确保交互)
 -- ============================================================
-local titleBar = Instance.new("Frame")
+local titleBar = Instance.new("TextButton")
 titleBar.Name = "TitleBar"
 titleBar.Size = UDim2.new(1, 0, 0, 32)
 titleBar.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 titleBar.BackgroundTransparency = 0.96
 titleBar.BorderSizePixel = 0
+titleBar.AutoButtonColor = false
+titleBar.Text = ""
 titleBar.Parent = mainWindow
 
 local titleCorner = Instance.new("UICorner")
@@ -229,8 +230,6 @@ modeSwitchCorner.Parent = modeSwitchBtn
 
 local modeNames = {"杀戮", "吸人"}
 local modeIcons = {"⚔", "🌀"}
-local modeTargets = {"MrFantastic", "TheFlashCw"}
-local modeRemotes = {"HitSpin", "Mirrage"}
 
 modeSwitchBtn.MouseButton1Click:Connect(function()
     CONFIG.CurrentMode = CONFIG.CurrentMode == 1 and 2 or 1
@@ -264,7 +263,7 @@ modeSwitchBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
---  攻击速度输入 (无备注)
+--  攻击速度输入
 -- ============================================================
 local speedLabel = Instance.new("TextLabel")
 speedLabel.Size = UDim2.new(1, 0, 0, 14)
@@ -325,7 +324,6 @@ mergeRow.Position = UDim2.new(0, 0, 0, 130)
 mergeRow.BackgroundTransparency = 1
 mergeRow.Parent = content
 
--- 左侧：目标玩家按钮 (约占2/3)
 local selectPlayersBtn = Instance.new("TextButton")
 selectPlayersBtn.Name = "SelectPlayersBtn"
 selectPlayersBtn.Size = UDim2.new(0.6, -4, 1, 0)
@@ -345,7 +343,6 @@ local selectCorner = Instance.new("UICorner")
 selectCorner.CornerRadius = UDim.new(0, 5)
 selectCorner.Parent = selectPlayersBtn
 
--- 右侧：模式按钮 (约占1/3)
 local modeBtn = Instance.new("TextButton")
 modeBtn.Name = "ModeBtn"
 modeBtn.Size = UDim2.new(0.35, -4, 1, 0)
@@ -363,7 +360,6 @@ local modeCorner = Instance.new("UICorner")
 modeCorner.CornerRadius = UDim.new(0, 5)
 modeCorner.Parent = modeBtn
 
--- 保存引用供其他函数使用
 local selectPlayersBtnRef = selectPlayersBtn
 local modeBtnRef = modeBtn
 
@@ -409,7 +405,7 @@ btnCorner.CornerRadius = UDim.new(0, 6)
 btnCorner.Parent = triggerBtn
 
 -- ============================================================
---  玩家选择列表 (弹窗) - 关闭按钮再往左移 (改为-32)
+--  玩家选择列表 (弹窗 - 使用ScrollingFrame支持滚动)
 -- ============================================================
 local selectionGui = Instance.new("ScreenGui")
 selectionGui.Name = "PlayerSelectionGUI"
@@ -417,8 +413,8 @@ selectionGui.Parent = screenGui
 selectionGui.Enabled = false
 
 local selectionFrame = Instance.new("Frame")
-selectionFrame.Size = UDim2.new(0, 180, 0, 220)
-selectionFrame.Position = UDim2.new(0.5, -90, 0.5, -110)
+selectionFrame.Size = UDim2.new(0, 180, 0, 230)
+selectionFrame.Position = UDim2.new(0.5, -90, 0.5, -115)
 selectionFrame.BackgroundColor3 = Color3.fromRGB(22, 26, 48)
 selectionFrame.BackgroundTransparency = 0.05
 selectionFrame.BorderSizePixel = 0
@@ -451,7 +447,7 @@ local selTitleCorner = Instance.new("UICorner")
 selTitleCorner.CornerRadius = UDim.new(0, 12)
 selTitleCorner.Parent = selTitle
 
--- 关闭按钮 (右上角，再往左移一点: -28 改为 -32)
+-- 关闭按钮 (右上角)
 local selCloseBtn = Instance.new("TextButton")
 selCloseBtn.Name = "SelCloseBtn"
 selCloseBtn.Size = UDim2.new(0, 24, 0, 24)
@@ -469,18 +465,27 @@ local selCloseCorner = Instance.new("UICorner")
 selCloseCorner.CornerRadius = UDim.new(1, 0)
 selCloseCorner.Parent = selCloseBtn
 
--- 玩家列表容器
-local listContainer = Instance.new("Frame")
+-- 玩家列表容器 (ScrollingFrame - 支持滚动)
+local listContainer = Instance.new("ScrollingFrame")
+listContainer.Name = "ListContainer"
 listContainer.Size = UDim2.new(1, -10, 1, -44)
 listContainer.Position = UDim2.new(0, 5, 0, 34)
 listContainer.BackgroundTransparency = 1
+listContainer.BorderSizePixel = 0
 listContainer.ClipsDescendants = true
+listContainer.ScrollBarThickness = 4
+listContainer.ScrollBarImageColor3 = Color3.fromRGB(100, 100, 130)
 listContainer.Parent = selectionFrame
 
 local listLayout = Instance.new("UIListLayout")
 listLayout.SortOrder = Enum.SortOrder.Name
 listLayout.Padding = UDim.new(0, 2)
 listLayout.Parent = listContainer
+
+-- 监听布局变化更新CanvasSize
+listLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+    listContainer.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 4)
+end)
 
 -- ============================================================
 --  临时选中列表
@@ -512,6 +517,7 @@ local function refreshPlayerList()
         emptyLabel.TextColor3 = Color3.fromRGB(150, 150, 170)
         emptyLabel.TextSize = 12
         emptyLabel.Parent = listContainer
+        listContainer.CanvasSize = UDim2.new(0, 0, 0, 34)
         return
     end
     
@@ -556,6 +562,10 @@ local function refreshPlayerList()
             end
         end)
     end
+    
+    -- CanvasSize会在布局更新时自动调整
+    task.wait(0.05)
+    listContainer.CanvasSize = UDim2.new(0, 0, 0, listLayout.AbsoluteContentSize.Y + 4)
 end
 
 -- ============================================================
@@ -597,7 +607,7 @@ selectPlayersBtnRef.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
---  模式切换 (所有玩家/指定玩家) - 右侧按钮
+--  模式切换 (所有玩家/指定玩家)
 -- ============================================================
 modeBtnRef.MouseButton1Click:Connect(function()
     CONFIG.IsAllMode = not CONFIG.IsAllMode
@@ -628,7 +638,6 @@ modeBtnRef.MouseButton1Click:Connect(function()
     end
 end)
 
--- 初始状态
 selectPlayersBtnRef.TextTransparency = 0.5
 selectPlayersBtnRef.Active = false
 
@@ -687,7 +696,7 @@ local function getValidTarget()
 end
 
 -- ============================================================
---  执行攻击 (根据模式选择不同的远程事件)
+--  执行攻击
 -- ============================================================
 local function executeHitSpin()
     pcall(function()
@@ -739,16 +748,14 @@ local function executeHitSpin()
 end
 
 -- ============================================================
---  循环控制 (模式1循环，模式2单次)
+--  循环控制
 -- ============================================================
 local function startLoop()
     if isRunning then return end
     isRunning = true
     
-    -- 执行一次
     executeHitSpin()
     
-    -- 模式1: 循环执行
     if CONFIG.CurrentMode == 1 then
         loopConnection = game:GetService("RunService").Heartbeat:Connect(function()
             task.wait(CONFIG.AttackSpeed)
@@ -759,9 +766,7 @@ local function startLoop()
         local modeName = modeNames[CONFIG.CurrentMode]
         print("🟢 DyK" .. modeName .. "循环已启动 (速度: " .. string.format("%.2f", CONFIG.AttackSpeed) .. "s)")
     else
-        -- 模式2: 单次执行，执行后自动停止
-        print("🌀 DyK吸人单次执行完成 (速度: " .. string.format("%.2f", CONFIG.AttackSpeed) .. "s)")
-        -- 立即停止
+        print("🌀 DyK吸人单次执行完成")
         isRunning = false
         triggerBtn.BackgroundColor3 = Color3.fromRGB(124, 58, 237)
         triggerBtn.Text = "▶ 启动"
@@ -814,9 +819,6 @@ local function stopLoop()
     print("🔴 DyK" .. modeName .. "已停止")
 end
 
--- ============================================================
---  按钮点击切换
--- ============================================================
 triggerBtn.MouseButton1Click:Connect(function()
     if isRunning then
         stopLoop()
@@ -837,40 +839,43 @@ closeBtn.MouseButton1Click:Connect(function()
 end)
 
 -- ============================================================
---  拖动功能
+--  拖动功能 (修复版 - 支持PC和手机)
 -- ============================================================
 local dragData = {
     dragging = false,
-    offset = Vector2.new()
+    offset = Vector2.new(),
+    startPos = Vector2.new()
 }
 
-local function startDrag(input)
+local function onDragStart(input)
     if not input then return end
-    if input.UserInputType ~= Enum.UserInputType.MouseButton1 and 
-       input.UserInputType ~= Enum.UserInputType.Touch then 
+    
+    local inputType = input.UserInputType
+    if inputType ~= Enum.UserInputType.MouseButton1 and 
+       inputType ~= Enum.UserInputType.Touch then 
         return 
     end
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        local mouse = player:GetMouse()
-        if mouse and mouse.Target then
-            local target = mouse.Target
-            if target and (target.Name == "CloseBtn" or target.Name == "ToggleBtn" or 
-               target.Name == "ModeBtn" or target.Name == "TriggerBtn" or
-               target.Name == "SelectPlayersBtn" or target.Name == "RangeInput" or
-               target.Name == "SpeedInput" or target.Name == "SelCloseBtn" or
-               target.Name == "ModeSwitchBtn") then
-                return
-            end
+    
+    -- 检查是否点击了可交互控件
+    local target = inputType == Enum.UserInputType.MouseButton1 and player:GetMouse() and player:GetMouse().Target or nil
+    if target then
+        local name = target.Name
+        if name == "CloseBtn" or name == "ToggleBtn" or name == "ModeBtn" or 
+           name == "TriggerBtn" or name == "SelectPlayersBtn" or name == "RangeInput" or
+           name == "SpeedInput" or name == "SelCloseBtn" or name == "ModeSwitchBtn" then
+            return
         end
     end
+    
     dragData.dragging = true
     dragData.offset = Vector2.new(
         input.Position.X - mainWindow.AbsolutePosition.X,
         input.Position.Y - mainWindow.AbsolutePosition.Y
     )
+    dragData.startPos = Vector2.new(input.Position.X, input.Position.Y)
 end
 
-local function updateDrag(input)
+local function onDragMove(input)
     if not dragData.dragging then return end
     if not input or not input.Position then return end
     
@@ -884,28 +889,30 @@ local function updateDrag(input)
     mainWindow.Position = UDim2.new(0, newX, 0, newY)
 end
 
-local function endDrag()
+local function onDragEnd()
     dragData.dragging = false
 end
 
-titleBar.InputBegan:Connect(startDrag)
-titleBar.InputEnded:Connect(endDrag)
+-- 绑定标题栏事件 (使用InputBegan/InputEnded)
+titleBar.InputBegan:Connect(onDragStart)
+titleBar.InputEnded:Connect(onDragEnd)
 
+-- 全局移动监听
 UserInputService.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or
-       input.UserInputType == Enum.UserInputType.Touch then
-        updateDrag(input)
+    if input.UserInputType == Enum.UserInputType.MouseMovement then
+        onDragMove(input)
     end
 end)
 
+-- 触摸移动专用
 UserInputService.TouchMoved:Connect(function(input)
-    updateDrag(input)
+    onDragMove(input)
 end)
 
 -- ============================================================
 --  初始化
 -- ============================================================
-print("⚔ DyK双模式已加载 (模式二单次执行)")
+print("⚔ DyK双模式已加载 (滚动+拖动已修复)")
 print("📏 默认范围: 无限制")
 print("⚡ 杀戮模式: 循环执行 | 吸人模式: 单次执行")
 print("🔄 点击 '切换为: 吸人' 切换模式")
